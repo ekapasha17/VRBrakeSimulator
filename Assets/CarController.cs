@@ -7,7 +7,7 @@ public class CarController : MonoBehaviour
 {
     [Header("Track Settings")]
     public List<Transform> waypoints; // List of all waypoints that define the track
-    private int currentWaypointIndex = 0;
+    public int currentWaypointIndex = 0;
 
     [Header("Car Speed")]
     public float normalSpeed = 20f;
@@ -84,7 +84,7 @@ public class CarController : MonoBehaviour
 
 
         // Check if we are close enough to the waypoint to move to the next one
-        if (Vector3.Distance(transform.position, targetWaypoint.position) < 3f)
+        if (Vector3.Distance(transform.position, targetWaypoint.position) < 0.5f)
         {
             currentWaypointIndex++;
         }
