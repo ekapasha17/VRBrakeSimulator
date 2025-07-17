@@ -1,105 +1,49 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement; // Needed to restart the scene
 
 public class CarController : MonoBehaviour
 {
-    [Header("Track Settings")]
-    public List<Transform> waypoints; // List of all waypoints that define the track
-    public int currentWaypointIndex = 0;
+    // A list of points for the car to follow.
+    // 'public' means we can drag-and-drop our points into this list in the Unity Editor.
+    public Transform[] waypoints;
 
-    [Header("Car Speed")]
-    public float normalSpeed = 20f;
-    public float slowSpeed = 8f;
+    // The speed at which the car moves.
+    public float speed = 10.0f;
 
-    [Header("Braking")]
-    public KeyCode brakeKey = KeyCode.Space;
+    // This will keep track of which waypoint we are currently moving towards.
+    private int currentWaypointIndex = 0;
 
-    private float currentSpeed;
-    private Rigidbody rb;
-
-    void Start()
-    {
-        // Get the Rigidbody component attached to this car
-        rb = GetComponent<Rigidbody>();
-        
-        // Set the initial speed
-        currentSpeed = normalSpeed;
-
-        // Make sure there are waypoints to follow
-        if (waypoints.Count == 0)
-        {
-            Debug.LogError("No waypoints assigned to the car controller!");
-            this.enabled = false; // Disable the script if there's no path
-        }
-    }
-
+    // The Update function is called by Unity once every frame.
     void Update()
     {
-        // --- Player Input for Braking ---
-        // Check if the player is pressing the brake key
-        if (Input.GetKey(brakeKey))
+        // First, check if we have any waypoints in our list. If not, do nothing.
+        if (waypoints.Length == 0)
         {
-            currentSpeed = slowSpeed;
-        }
-        else
-        {
-            currentSpeed = normalSpeed;
-        }
-    }
-
-    void FixedUpdate()
-    {
-        // --- Autopilot Logic ---
-        // Ensure we haven't finished the track
-        if (currentWaypointIndex >= waypoints.Count)
-        {
-            // We've reached the end of the path
-            rb.velocity = Vector3.zero; // Stop the car
-            Debug.Log("Race Finished!");
             return;
         }
 
-        // Get the target waypoint
+        // Get the current target waypoint from our list.
         Transform targetWaypoint = waypoints[currentWaypointIndex];
 
-        // Calculate the direction to the target
-        Vector3 directionToTarget = (targetWaypoint.position - transform.position).normalized;
+        // Move the car towards the target waypoint.
+        // Vector3.MoveTowards calculates a position between our current position and the target.
+        // Time.deltaTime makes the movement smooth and independent of the frame rate.
+        transform.position = Vector3.MoveTowards(transform.position, targetWaypoint.position, speed * Time.deltaTime);
 
-        // Apply force/velocity to move the car forward
-        // We only want to move on the X and Z axes, not fly up.
-        Vector3 movementVelocity = new Vector3(directionToTarget.x, 0, directionToTarget.z) * currentSpeed;
-        
-        // Keep the car's current vertical velocity (so it stays on the ground)
-        movementVelocity.y = rb.velocity.y;
-        
-        rb.velocity = movementVelocity;
-        
-        // Make the car look towards the direction it's moving
-        if (rb.velocity.magnitude > 0.1f)
+        // Optional: Make the car look towards the point it's moving to.
+        transform.LookAt(targetWaypoint.position);
+
+        // Check if the car has reached the target waypoint.
+        // We check if the distance is very small, because it might never be exactly zero.
+        if (Vector3.Distance(transform.position, targetWaypoint.position) < 0.1f)
         {
-            transform.rotation = Quaternion.LookRotation(new Vector3(rb.velocity.x, 0, rb.velocity.z));
-        }
-
-
-        // Check if we are close enough to the waypoint to move to the next one
-        if (Vector3.Distance(transform.position, targetWaypoint.position) < 0.5f)
-        {
+            // If we've reached the waypoint, update the index to aim for the next one.
             currentWaypointIndex++;
-        }
-    }
 
-    // --- Collision Detection ---
-    void OnCollisionEnter(Collision collision)
-    {
-        // Check if we hit an object tagged as "Obstacle"
-        if (collision.gameObject.CompareTag("Obstacle"))
-        {
-            Debug.Log("CRASH! You hit an obstacle.");
-            // You can add game over logic here
-            // For example, restart the level:
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            // If we've reached the last waypoint, loop back to the first one (index 0).
+            if (currentWaypointIndex >= waypoints.Length)
+            {
+                currentWaypointIndex = 0;
+            }
         }
     }
 }
