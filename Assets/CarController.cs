@@ -12,6 +12,14 @@ public class CarController : MonoBehaviour
     // This will keep track of which waypoint we are currently moving towards.
     private int currentWaypointIndex = 0;
 
+    AudioManager audioManager;
+
+    void Awake()
+    {
+        // Find the AudioManager in the scene.
+        audioManager = GameObject.FindGameObjectsWithTag("Audio")[0].GetComponent<AudioManager>();
+    }
+
     void Update()
     {
         // First, check if we have any waypoints in our list. If not, do nothing.
@@ -23,12 +31,20 @@ public class CarController : MonoBehaviour
         // --- NEW: LOGIC FOR CHANGING SPEED ---
         // Create a temporary variable to hold the current speed.
         float currentSpeed = normalSpeed;
+        if (audioManager.sfxSource.clip != audioManager.carMovingSlowly)
+        {
+            audioManager.PlaySFX(audioManager.carMovingSlowly, true);
+        }
 
         // Check if the spacebar is being held down.
         if (Input.GetKey(KeyCode.Space))
         {
             // If it is, use the slow speed.
             currentSpeed = slowSpeed;
+            if (audioManager.sfxSource.clip != audioManager.engineIdle)
+            {
+                audioManager.PlaySFX(audioManager.engineIdle, true);
+            }
         }
         // ------------------------------------
 
